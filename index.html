@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Riesgo en Salud SaludVida</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: encabezado tipo "historia clínica institucional" + pestañas por sección + paneles interactivos que se despliegan al tocar */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --ink:#17262b; --muted:#56666b; --line:#d5ddda;
+  --accent:#145a66; --accent-soft:#e1eeef; --amber:#b86e00;
+  --r-crit:#b3261e; --r-high:#d9731a; --r-mod:#c9a400; --r-low:#3c8c4a;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"Source Sans 3",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1719; --surface:#172326; --ink:#e4ecea; --muted:#9db0b0; --line:#2b3b3e;
+  --accent:#6cc3cf; --accent-soft:#1d3539; --amber:#f0a540;
+  --r-crit:#ef6b62; --r-high:#f39a4c; --r-mod:#e6c94a; --r-low:#6fbf7c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1719; --surface:#172326; --ink:#e4ecea; --muted:#9db0b0; --line:#2b3b3e;
+  --accent:#6cc3cf; --accent-soft:#1d3539; --amber:#f0a540;
+  --r-crit:#ef6b62; --r-high:#f39a4c; --r-mod:#e6c94a; --r-low:#6fbf7c; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:20px;padding-block:28px 56px}
+header{display:grid;gap:10px;border-bottom:2px solid var(--ink);padding-bottom:18px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,5vw,46px);line-height:1.05;margin:0;text-wrap:balance}
+h1 span{color:var(--accent)}
+.lede{max-width:68ch;margin:0;color:var(--muted)}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.fact{font-family:var(--f-mono);font-size:12.5px;border:1px solid var(--line);background:var(--surface);padding:5px 9px;border-radius:4px}
+.fact b{color:var(--r-crit)}
+nav{display:flex;flex-wrap:wrap;gap:6px;margin:22px 0 18px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-block:8px;z-index:5}
+nav button{font:600 14px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 12px;border-radius:999px;cursor:pointer}
+nav button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+nav button:focus-visible,.node:focus-visible,.step:focus-visible,summary:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+section{display:grid;gap:18px}
+h2{font-family:var(--f-display);font-weight:700;font-size:24px;margin:0;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:700;font-size:17px;margin:0}
+p{margin:0;max-width:72ch}
+.hint{font-size:14px;color:var(--muted)}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.node{all:unset;display:grid;gap:6px;background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--c,var(--accent));padding:14px;border-radius:6px;cursor:pointer;min-width:0}
+.node[aria-pressed="true"]{background:var(--accent-soft)}
+.node small{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.detail{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--accent);padding:16px 18px;border-radius:6px;display:grid;gap:8px}
+.detail ul{margin:0;padding-left:20px}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:14.5px}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-family:var(--f-display);font-size:13px;background:var(--accent-soft)}
+tr:last-child td{border-bottom:0}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:11px;padding:2px 7px;border-radius:3px;border:1px solid currentColor}
+.cycle{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.cycle{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.step{all:unset;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px;display:grid;gap:4px;text-align:center}
+.step .L{font-family:var(--f-display);font-weight:800;font-size:30px;color:var(--accent)}
+.step[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.chain .box{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;flex:1 1 170px;min-width:0}
+.chain .arrow{font-family:var(--f-mono);color:var(--amber);font-weight:700}
+.matrix{display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:3px;font-family:var(--f-mono);font-size:11.5px;max-width:520px}
+.matrix div{padding:8px 4px;text-align:center;border-radius:3px;color:#111}
+.matrix .ax{color:var(--muted);background:none}
+details{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 16px}
+summary{cursor:pointer;font-family:var(--f-display);font-weight:700}
+details[open] summary{margin-bottom:8px}
+details ul{margin:0;padding-left:20px}
+.kpi{font-family:var(--f-mono);font-size:13px}
+footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted);display:grid;gap:4px}
+@media (prefers-reduced-motion:no-preference){.detail,section{animation:in .25s ease-out}@keyframes in{from{transform:translateY(4px)}to{transform:none}}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Caso práctico · Unidad 1 · Gestión integral del riesgo en salud</div>
+  <h1>Clasificación y metodologías de gestión del riesgo en <span>SaludVida Integral S.A.S.</span></h1>
+  <p class="lede">IPS de mediana complejidad que atiende cerca de 85.000 usuarios. Esta infografía resume qué tipos de riesgo enfrenta, con qué metodologías se analizan, cómo se gestionan con el ciclo PHVA y cómo se conectan el riesgo clínico, el financiero y el organizacional. Toque cada tarjeta para ver el detalle.</p>
+  <div class="facts">
+    <span class="fact">Eventos adversos <b>+18 %</b> en 2 años</span>
+    <span class="fact"><b>9 %</b> de pacientes = <b>48 %</b> del gasto</span>
+    <span class="fact">Circular 004/2018: cumplimiento <b>parcial</b></span>
+    <span class="fact">Matrices de riesgo <b>aisladas</b> por área</span>
+  </div>
+</header>
+
+<nav role="tablist" aria-label="Secciones de la infografía">
+  <button role="tab" id="t1" aria-selected="true" data-s="s1">1. Tipos de riesgo</button>
+  <button role="tab" id="t2" aria-selected="false" data-s="s2">2. Metodologías</button>
+  <button role="tab" id="t3" aria-selected="false" data-s="s3">3. Ciclo PHVA</button>
+  <button role="tab" id="t4" aria-selected="false" data-s="s4">4. Clínico · financiero · organizacional</button>
+  <button role="tab" id="t5" aria-selected="false" data-s="s5">5. Aplicación al caso</button>
+</nav>
+
+<!-- 1 -->
+<section id="s1" role="tabpanel" aria-labelledby="t1">
+  <h2>Mapa de clasificación de riesgos en el sector salud</h2>
+  <p class="hint">Los riesgos no son compartimentos estancos: un evento clínico puede terminar en demanda, sanción, pérdida de reputación y crisis financiera (Martínez, 2026a). Seleccione un tipo de riesgo.</p>
+  <div class="grid" id="riskGrid"></div>
+  <div class="detail" id="riskDetail" aria-live="polite"></div>
+</section>
+
+<!-- 2 -->
+<section id="s2" role="tabpanel" aria-labelledby="t2" hidden>
+  <h2>Esquema comparativo de metodologías</h2>
+  <p>Las metodologías <b>cualitativas</b> se apoyan en el juicio experto y en escalas descriptivas; son rápidas, participativas y útiles cuando faltan datos. Las <b>cuantitativas</b> usan datos históricos, modelos estadísticos y probabilísticos para medir el riesgo con más objetividad, pero dependen de la calidad de la información. La gestión moderna combina ambas: el FMEA identifica modos de falla y los modelos probabilísticos estiman qué tan probable es cada uno (Martínez, 2026b).</p>
+  <div class="tablebox"><table>
+    <thead><tr><th>Metodología</th><th>Tipo</th><th>Pregunta que responde</th><th>Cómo prioriza</th><th>Uso en SaludVida</th></tr></thead>
+    <tbody>
+      <tr><td><b>Matriz de riesgo</b></td><td><span class="tag">Semicuantitativa</span></td><td>¿Qué tan probable es y qué tanto daño causaría?</td><td>Probabilidad × impacto (escala 1–5)</td><td>Unificar en una sola matriz institucional los mapas aislados de urgencias, hospitalización, laboratorio y facturación.</td></tr>
+      <tr><td><b>FMEA / AMFE</b></td><td><span class="tag">Prospectiva · semicuantitativa</span></td><td>¿Cómo podría fallar este proceso antes de que falle?</td><td>NPR = Severidad × Ocurrencia × Detectabilidad (1–1000)</td><td>Seguimiento de crónicos, administración de medicamentos y egreso hospitalario.</td></tr>
+      <tr><td><b>HAZOP</b></td><td><span class="tag">Cualitativa · prospectiva</span></td><td>¿Qué desviación ocurre si un parámetro sale de lo esperado?</td><td>Palabras guía (más, menos, no, tarde) aplicadas a cada nodo</td><td>Flujo de urgencias en temporada de dengue (sobredemanda, retrasos en triaje).</td></tr>
+      <tr><td><b>Análisis de causa raíz (ACR)</b></td><td><span class="tag">Cualitativa · retrospectiva</span></td><td>¿Por qué ocurrió y qué falla del sistema lo permitió?</td><td>Espina de pescado, 5 porqués, Protocolo de Londres</td><td>Eventos adversos graves y hospitalizaciones evitables ya ocurridas.</td></tr>
+      <tr><td><b>DAFO aplicado al riesgo</b></td><td><span class="tag">Cualitativa · estratégica</span></td><td>¿Qué factores internos y externos nos exponen o protegen?</td><td>Cruce de fortalezas, debilidades, oportunidades y amenazas</td><td>Diagnóstico estratégico para la gerencia y la junta.</td></tr>
+      <tr><td><b>Modelos predictivos y estratificación</b></td><td><span class="tag">Cuantitativa</span></td><td>¿Qué pacientes se van a complicar o a costar más?</td><td>Puntajes de riesgo, regresión, analítica de datos</td><td>Cohortes de alto costo: renales, cardiovasculares, oncológicos y multimorbilidad.</td></tr>
+      <tr><td><b>Indicadores clave de riesgo (KRI)</b></td><td><span class="tag">Cuantitativa · monitoreo</span></td><td>¿El riesgo está subiendo o bajando?</td><td>Umbrales y alertas tempranas en tablero</td><td>Tasa de eventos adversos, reingresos a 30 días, casos de dengue por barrio.</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Escala visual de la matriz probabilidad × impacto</h3>
+  <div class="matrix" aria-label="Matriz de riesgo 5 por 5">
+    <div class="ax"></div><div class="ax">Impacto 1</div><div class="ax">2</div><div class="ax">3</div><div class="ax">4</div><div class="ax">5</div>
+  </div>
+  <p class="hint">Verde: aceptable, se monitorea · Amarillo: moderado, mejora preventiva · Naranja: alto, intervención prioritaria · Rojo: extremo, acción inmediata de la alta dirección.</p>
+</section>
+
+<!-- 3 -->
+<section id="s3" role="tabpanel" aria-labelledby="t3" hidden>
+  <h2>Ciclo PHVA aplicado a la gestión del riesgo</h2>
+  <p>El PHVA convierte la gestión del riesgo en un ciclo permanente y no en un trámite. Coincide con el proceso de la ISO 31000 (contexto, identificación, análisis, evaluación, tratamiento, monitoreo y comunicación) y con las cuatro etapas que exige la Circular Externa 004 de 2018: identificar, evaluar y medir, tratar y controlar, monitorear. Seleccione una fase.</p>
+  <div class="cycle" id="cycle"></div>
+  <div class="detail" id="cycleDetail" aria-live="polite"></div>
+</section>
+
+<!-- 4 -->
+<section id="s4" role="tabpanel" aria-labelledby="t4" hidden>
+  <h2>Relación entre riesgo clínico, financiero y organizacional</h2>
+  <p>En SaludVida los tres riesgos se alimentan entre sí. Cuando el seguimiento del paciente crónico falla, aparece la complicación; la complicación genera hospitalización evitable y gasto; el gasto presiona la caja y el talento humano; la sobrecarga del equipo aumenta los errores. Romper la cadena en el primer eslabón es lo más barato y lo más humano.</p>
+  <div class="chain">
+    <div class="box"><span class="tag" style="color:var(--r-crit)">Clínico</span><br>Paciente diabético sin control ni seguimiento</div><span class="arrow">→</span>
+    <div class="box"><span class="tag" style="color:var(--r-crit)">Clínico</span><br>Descompensación, falla renal, evento adverso</div><span class="arrow">→</span>
+    <div class="box"><span class="tag" style="color:var(--r-high)">Financiero</span><br>Hospitalización evitable, estancia larga, glosas</div><span class="arrow">→</span>
+    <div class="box"><span class="tag" style="color:var(--r-mod)">Organizacional</span><br>Sobrecarga, menos tiempo para prevenir, hallazgos de auditoría</div><span class="arrow">↺</span>
+  </div>
+  <details open><summary>Riesgo clínico</summary><p>Daño al paciente derivado de la atención: errores de medicación, infecciones, fallas diagnósticas, caídas. Casi siempre responde a fallas del sistema (protocolos débiles, sobrecarga, mala comunicación) más que a un error individual. Indicador: tasa de eventos adversos por 1.000 egresos.</p></details>
+  <details><summary>Riesgo financiero</summary><p>Desequilibrio entre ingresos y gasto: concentración de pacientes de alto costo, glosas, estancias prolongadas y contratos con las EPS mal calculados. En SaludVida, el 9 % de los pacientes consume el 48 % del gasto. Indicador: costo por paciente de alto costo y porcentaje de glosa.</p></details>
+  <details><summary>Riesgo organizacional</summary><p>Incluye lo operacional, lo legal-regulatorio y lo reputacional: procesos sin estandarizar, matrices aisladas, incumplimientos ante la Supersalud y pérdida de confianza de la comunidad. Indicador: porcentaje de planes de acción de auditoría cerrados a tiempo.</p></details>
+  <details><summary>Cómo se integran</summary><ul><li>Una sola matriz institucional con columnas de impacto clínico, financiero y reputacional.</li><li>Comité integrado de riesgos (calidad, seguridad del paciente, finanzas, epidemiología).</li><li>Tablero único en el que el gasto se lee junto con los desenlaces clínicos.</li></ul></details>
+</section>
+
+<!-- 5 -->
+<section id="s5" role="tabpanel" aria-labelledby="t5" hidden>
+  <h2>Aplicación concreta al caso SaludVida Integral S.A.S.</h2>
+  <p>Propuesta de modelo integral en tres niveles, tal como lo plantea la gestión integral del riesgo en salud (GIRS): institucional, individual y territorial.</p>
+  <details open><summary>Nivel institucional: un solo sistema de riesgos</summary><ul>
+    <li>Política y marco ISO 31000 aprobados por la gerencia; apetito y tolerancia al riesgo definidos.</li>
+    <li>Matriz institucional única que reemplaza las matrices aisladas de cada área.</li>
+    <li>FMEA en tres procesos críticos: medicación, seguimiento de crónicos y egreso. Meta: bajar los modos de falla con NPR mayor de 160 a menos de 80.</li>
+    <li>ACR con Protocolo de Londres para todo evento adverso grave; reporte sin castigo.</li>
+  </ul></details>
+  <details><summary>Nivel individual: cohortes de alto costo</summary><ul>
+    <li>Estratificación de los 85.000 usuarios en riesgo bajo, medio, alto y muy alto.</li>
+    <li>Gestor de caso para insuficiencia renal crónica, enfermedad cardiovascular compleja, oncología y adultos mayores con multimorbilidad.</li>
+    <li>Rutas de seguimiento con alertas de inasistencia y de control metabólico (HbA1c, tensión arterial, tasa de filtración glomerular).</li>
+  </ul></details>
+  <details><summary>Nivel territorial: dengue, diabetes y envejecimiento</summary><ul>
+    <li>Análisis territorial con la Secretaría de Salud: mapa de casos de dengue por barrio y de adultos mayores vulnerables.</li>
+    <li>Plan de contingencia en urgencias para picos de dengue (triaje con signos de alarma, hidratación, camas de observación).</li>
+    <li>Jornadas de tamizaje de diabetes y educación en los barrios periféricos, articuladas con el plan territorial de salud.</li>
+  </ul></details>
+  <details><summary>Indicadores de seguimiento (KRI)</summary><ul class="kpi">
+    <li>Eventos adversos: reducir 10 % en el primer año.</li>
+    <li>Hospitalizaciones evitables en crónicos: reducir 15 %.</li>
+    <li>Pacientes de alto costo con gestor de caso asignado: 90 % o más.</li>
+    <li>Planes de acción de auditoría Supersalud cerrados a tiempo: 100 %.</li>
+    <li>Tiempo de respuesta ante alerta de dengue: 48 horas o menos.</li>
+  </ul></details>
+</section>
+
+<footer>
+  <span>Elaborado por Maribel Guerra Gómez · Asturias Corporación Universitaria · 2026</span>
+  <span>Fuentes: Martínez (2026a, 2026b), lecturas de la unidad; ISO 31000:2018; Supersalud, Circular Externa 004 de 2018 y Circular Externa 20211700000004-5 de 2021; Gao et al. (2022).</span>
+</footer>
+</div>
+
+<script>
+const risks=[
+ {k:'Clínico',c:'var(--r-crit)',s:'Atención directa',d:'Probabilidad de que el paciente sufra daño por la atención: eventos adversos, errores de medicación, infecciones asociadas, caídas, fallas diagnósticas.',e:'En SaludVida los eventos adversos reportados subieron 18 % y no se analizan con metodologías estructuradas como FMEA o ACR.'},
+ {k:'Operacional',c:'var(--r-high)',s:'Procesos y sistemas',d:'Fallas en procesos internos, sistemas de información, infraestructura o talento humano que pueden escalar en cascada hasta afectar al paciente.',e:'Cada área (urgencias, hospitalización, laboratorio, facturación) gestiona sus riesgos sin metodología unificada.'},
+ {k:'Financiero',c:'var(--r-high)',s:'Sostenibilidad',d:'Desequilibrios presupuestales, pérdida de liquidez, concentración de alto costo, glosas y estancias prolongadas.',e:'El 9 % de los pacientes representa el 48 % del gasto anual, sin modelo predictivo ni seguimiento de cohortes.'},
+ {k:'Poblacional',c:'var(--r-mod)',s:'Epidemiológico y territorial',d:'Riesgo derivado de brotes, envejecimiento, enfermedades crónicas y determinantes sociales. Exige enfoque preventivo e intersectorial.',e:'Aumento de dengue en barrios periféricos, más diabetes tipo II y adultos mayores en zonas vulnerables.'},
+ {k:'Legal y regulatorio',c:'var(--r-mod)',s:'Cumplimiento',d:'Incumplimiento normativo, sanciones, demandas por mala práctica o falta de implementación de lineamientos oficiales.',e:'Observaciones de la Supersalud por cumplimiento parcial de la Circular 004 de 2018 y debilidades en indicadores y planes de acción.'},
+ {k:'Reputacional',c:'var(--r-low)',s:'Confianza',d:'Daño a la imagen y credibilidad institucional por eventos adversos, crisis mal manejadas o falta de transparencia; se amplifica en redes sociales.',e:'Un evento adverso grave o un brote mal atendido puede afectar la relación con las EPS y con la comunidad.'}
+];
+const grid=document.getElementById('riskGrid'),rd=document.getElementById('riskDetail');
+function showRisk(i){[...grid.children].forEach((b,j)=>b.setAttribute('aria-pressed',i===j));const r=risks[i];
+ rd.style.borderLeftColor=r.c;rd.innerHTML=`<h3>Riesgo ${r.k.toLowerCase()}</h3><p>${r.d}</p><p><b>En SaludVida:</b> ${r.e}</p>`;}
+risks.forEach((r,i)=>{const b=document.createElement('button');b.className='node';b.style.setProperty('--c',r.c);b.id='risk'+i;
+ b.innerHTML=`<small>${r.s}</small><h3>${r.k}</h3>`;b.onclick=()=>showRisk(i);grid.appendChild(b);});
+showRisk(0);
+
+const m=document.querySelector('.matrix');const col=s=>s>=15?'var(--r-crit)':s>=10?'var(--r-high)':s>=5?'var(--r-mod)':'var(--r-low)';
+for(let p=5;p>=1;p--){const a=document.createElement('div');a.className='ax';a.textContent=(p===5?'Prob. ':'')+p;m.appendChild(a);
+ for(let i=1;i<=5;i++){const d=document.createElement('div');d.textContent=p*i;d.style.background=col(p*i);m.appendChild(d);}}
+
+const phva=[
+ {L:'P',n:'Planear',t:'Contexto, identificación y análisis',x:['Establecer el contexto interno y externo, el apetito y la tolerancia al riesgo.','Identificar riesgos con todas las fuentes: reportes de eventos, auditorías, datos de gasto, perfil epidemiológico.','Analizar y priorizar con matriz probabilidad × impacto y FMEA (NPR).','En SaludVida: construir la matriz institucional única y estratificar la población.']},
+ {L:'H',n:'Hacer',t:'Tratamiento y controles',x:['Ejecutar los planes de acción con responsables y plazos.','Controles: listas de verificación, doble verificación de medicamentos, gestores de caso, alertas en la historia clínica.','En SaludVida: rutas para crónicos de alto costo y plan de contingencia de dengue.']},
+ {L:'V',n:'Verificar',t:'Monitoreo y revisión',x:['Medir con indicadores clave de riesgo (KRI) en un tablero mensual.','Comparar el riesgo residual con el inherente y recalcular el NPR.','En SaludVida: tasa de eventos adversos, hospitalizaciones evitables, cumplimiento de planes de la Supersalud.']},
+ {L:'A',n:'Actuar',t:'Mejora continua y aprendizaje',x:['Ajustar protocolos y controles según los resultados.','Aprender de cada evento con ACR y socializar las lecciones.','En SaludVida: rendición de cuentas al comité integrado de riesgos y a la junta directiva.']}
+];
+const cy=document.getElementById('cycle'),cd=document.getElementById('cycleDetail');
+function showStep(i){[...cy.children].forEach((b,j)=>b.setAttribute('aria-pressed',i===j));const s=phva[i];
+ cd.innerHTML=`<h3>${s.n}: ${s.t}</h3><ul>${s.x.map(t=>`<li>${t}</li>`).join('')}</ul>`;}
+phva.forEach((s,i)=>{const b=document.createElement('button');b.className='step';b.id='phva'+i;b.innerHTML=`<span class="L">${s.L}</span><b>${s.n}</b><span class="hint">${s.t}</span>`;b.onclick=()=>showStep(i);cy.appendChild(b);});
+showStep(0);
+
+const tabs=[...document.querySelectorAll('nav button')];
+function openTab(id){tabs.forEach(t=>{const on=t.dataset.s===id;t.setAttribute('aria-selected',on);document.getElementById(t.dataset.s).hidden=!on;});}
+tabs.forEach(t=>t.onclick=()=>openTab(t.dataset.s));
+const h=location.hash.replace('#','');if(['s1','s2','s3','s4','s5'].includes(h))openTab(h);
+</script>
+</body>
+</html>
